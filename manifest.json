@@ -1,0 +1,26 @@
+
+{
+  "manifest_version": 3,
+  "name": "Chat Everywhere",
+  "version": "1.0",
+  "description": "Chat, media, groups and shares available across webpages.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://ext-chrome-4385a-default-rtdb.asia-southeast1.firebasedatabase.app/*",
+    "https://identitytoolkit.googleapis.com/*",
+    "https://securetoken.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

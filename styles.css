@@ -1,0 +1,1433 @@
+/* =====================================================
+   FLOATING CHAT WIDGET — MODERN
+   -----------------------------------------------------
+   Same selectors as the original; no JS/markup changes.
+   Theming: change --fc-accent / --fc-accent-2 and the
+   whole widget follows.
+   Dark mode: data-fc-theme="dark" on <html>.
+===================================================== */
+
+:root {
+  /* Accent */
+  --fc-accent:        #4338CA;
+  --fc-accent-2:      #6D6AF2;   /* gradient partner */
+  --fc-accent-hover:  #3730A3;
+  --fc-accent-tint:   #EEF0FF;
+  --fc-accent-ring:   rgba(67, 56, 202, 0.22);
+  /* soft top-light sheen over a two-tone gradient: shiny, not glossy */
+  --fc-grad: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 55%),
+             linear-gradient(135deg, var(--fc-accent) 0%, var(--fc-accent-2) 100%);
+
+  /* Surfaces */
+  --fc-surface:       #FFFFFF;
+  --fc-canvas:        #F5F6FA;
+  --fc-raised:        #ECEEF5;
+  --fc-glass:         rgba(255, 255, 255, 0.82);
+
+  /* Text */
+  --fc-ink:           #16110F;
+  --fc-muted:         #6F6866;
+  --fc-on-accent:     #FFFFFF;
+
+  /* Lines */
+  --fc-line:          rgba(22, 17, 15, 0.08);
+  --fc-line-soft:     rgba(22, 17, 15, 0.05);
+
+  /* Status */
+  --fc-online:        #16A34A;
+  --fc-link:          #2563EB;
+  --fc-focus:         #6D6AF2;
+
+  /* Radius */
+  --fc-r-sm:   10px;
+  --fc-r-md:   14px;
+  --fc-r-lg:   24px;
+  --fc-r-pill: 999px;
+
+  /* Elevation */
+  --fc-e1: 0 1px 2px rgba(22, 17, 15, 0.05);
+  --fc-e2: 0 6px 18px rgba(22, 17, 15, 0.08);
+  --fc-e3: 0 30px 80px rgba(22, 17, 15, 0.24),
+           0 4px 14px rgba(22, 17, 15, 0.08);
+
+  /* Spacing */
+  --fc-s1: 4px;
+  --fc-s2: 8px;
+  --fc-s3: 12px;
+  --fc-s4: 16px;
+  --fc-s5: 24px;
+
+  --fc-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+             Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --fc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-fc-theme="dark"] {
+  --fc-accent:        #6366F1;
+  --fc-accent-2:      #8B8CFA;
+  --fc-accent-hover:  #7C7FF5;
+  --fc-accent-tint:   rgba(99, 102, 241, 0.18);
+  --fc-accent-ring:   rgba(139, 140, 250, 0.30);
+
+  --fc-surface:       #171923;
+  --fc-canvas:        #0F1118;
+  --fc-raised:        #232635;
+  --fc-glass:         rgba(23, 25, 35, 0.82);
+
+  --fc-ink:           #F4EFEE;
+  --fc-muted:         #A59D9B;
+  --fc-on-accent:     #FFFFFF;
+
+  --fc-line:          rgba(255, 255, 255, 0.09);
+  --fc-line-soft:     rgba(255, 255, 255, 0.05);
+
+  --fc-online:        #4ADE80;
+  --fc-link:          #8AB4F8;
+  --fc-focus:         #A5A6FB;
+
+  --fc-e1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --fc-e2: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --fc-e3: 0 30px 80px rgba(0, 0, 0, 0.65);
+}
+
+
+/* =====================================================
+   WIDGET RESET
+===================================================== */
+
+#fc-floating-btn,
+#fc-chatbox,
+#fc-chatbox *,
+#fc-chatbox *::before,
+#fc-chatbox *::after {
+  box-sizing: border-box;
+}
+
+#fc-chatbox {
+  font-family: var(--fc-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fc-ink);
+  text-align: left;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+#fc-chatbox h2,
+#fc-chatbox h3,
+#fc-chatbox p {
+  margin: 0;
+  font-family: inherit;
+}
+
+#fc-chatbox :focus-visible,
+#fc-floating-btn:focus-visible {
+  outline: 2px solid var(--fc-focus);
+  outline-offset: 2px;
+  border-radius: var(--fc-r-sm);
+}
+
+#fc-chatbox ::-webkit-scrollbar { width: 8px; }
+#fc-chatbox ::-webkit-scrollbar-thumb {
+  background: var(--fc-line);
+  border-radius: var(--fc-r-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+
+/* =====================================================
+   FLOATING BUTTON
+===================================================== */
+
+#fc-floating-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+
+  width: 60px;
+  height: 60px;
+
+  border: none;
+  border-radius: 20px;
+
+  background: var(--fc-grad);
+  color: var(--fc-on-accent);
+
+  font-size: 24px;
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  z-index: 2147483646;
+
+  box-shadow: 0 12px 28px var(--fc-accent-ring),
+              0 2px 6px rgba(22, 17, 15, 0.18),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform 0.25s var(--fc-ease),
+              box-shadow 0.25s var(--fc-ease),
+              border-radius 0.25s var(--fc-ease);
+}
+
+#fc-floating-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+  border-radius: 22px;
+  box-shadow: 0 18px 36px var(--fc-accent-ring),
+              0 2px 6px rgba(22, 17, 15, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+#fc-floating-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+
+/* =====================================================
+   CHATBOX
+===================================================== */
+
+#fc-chatbox {
+  position: fixed;
+  bottom: 96px;
+  right: 24px;
+
+  width: 392px;
+  height: 590px;
+  max-height: calc(100vh - 120px);
+
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-lg);
+
+  box-shadow: var(--fc-e3);
+  z-index: 2147483647;
+
+  transform-origin: bottom right;
+}
+
+#fc-chatbox.fc-open {
+  display: flex !important;
+  animation: fc-pop-in 0.32s var(--fc-ease);
+}
+
+@keyframes fc-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+#fc-chatbox-header {
+  flex-shrink: 0;
+  position: relative;
+  height: 72px;
+  padding: 0 var(--fc-s4) 0 var(--fc-s5);
+
+  background: var(--fc-grad);
+  color: var(--fc-on-accent);
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* soft decorative glow */
+#fc-chatbox-header::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+#fc-chatbox-header > * { position: relative; }
+
+.fc-title {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-s3);
+  min-width: 0;
+}
+
+.fc-logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  font-size: 19px;
+
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.fc-title-main {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.fc-status {
+  font-size: 12px;
+  opacity: 0.85;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fc-online-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: var(--fc-r-pill);
+  background: #6EE7A0;
+  box-shadow: 0 0 0 3px rgba(110, 231, 160, 0.28);
+}
+
+#fc-chatbox-close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  border-radius: var(--fc-r-pill);
+
+  color: var(--fc-on-accent);
+  font-size: 20px;
+  line-height: 1;
+
+  cursor: pointer;
+  transition: background 0.2s var(--fc-ease),
+              transform 0.2s var(--fc-ease);
+}
+
+#fc-chatbox-close:hover {
+  background: rgba(255, 255, 255, 0.26);
+  transform: rotate(90deg);
+}
+
+
+/* =====================================================
+   TABS — segmented pill control
+===================================================== */
+
+#fc-tabs {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--fc-s1);
+
+  margin: var(--fc-s3) var(--fc-s3) var(--fc-s2);
+  padding: var(--fc-s1);
+
+  background: var(--fc-raised);
+  border-radius: var(--fc-r-md);
+}
+
+.fc-tab {
+  height: 52px;
+
+  background: transparent;
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+
+  color: var(--fc-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 550;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+
+  position: relative;
+  transition: color 0.2s var(--fc-ease),
+              background 0.2s var(--fc-ease),
+              box-shadow 0.2s var(--fc-ease);
+}
+
+/* The first line holds the icon glyph */
+.fc-tab:first-line {
+  font-size: 17px;
+}
+
+.fc-tab:hover {
+  color: var(--fc-ink);
+}
+
+.fc-tab.active {
+  background: var(--fc-surface);
+  color: var(--fc-accent);
+  font-weight: 650;
+  box-shadow: var(--fc-e2);
+}
+
+
+/* =====================================================
+   CONTENT
+===================================================== */
+
+#fc-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--fc-surface);
+}
+
+.fc-panel {
+  display: none;
+  height: 100%;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.fc-panel.active {
+  display: flex;
+  animation: fc-fade 0.25s var(--fc-ease);
+}
+
+@keyframes fc-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* =====================================================
+   PANEL TITLE
+===================================================== */
+
+.fc-panel-title {
+  flex-shrink: 0;
+  padding: var(--fc-s3) var(--fc-s4);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fc-s3);
+
+  background: var(--fc-surface);
+}
+
+.fc-panel-title h3 {
+  color: var(--fc-ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fc-panel-title p {
+  margin-top: 2px;
+  color: var(--fc-muted);
+  font-size: 12px;
+}
+
+
+/* =====================================================
+   SMALL BUTTON
+===================================================== */
+
+.fc-small-btn {
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--fc-r-pill);
+  padding: 8px 14px;
+
+  background: var(--fc-accent);
+  color: var(--fc-on-accent);
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: background 0.2s var(--fc-ease),
+              transform 0.2s var(--fc-ease);
+}
+
+.fc-small-btn:hover {
+  background: var(--fc-accent-hover);
+  transform: translateY(-1px);
+}
+
+.fc-small-btn:active {
+  transform: scale(0.97);
+}
+
+
+/* =====================================================
+   CHAT LIST
+===================================================== */
+
+#fc-chat-list {
+  background: var(--fc-surface);
+  padding: 0 var(--fc-s2) var(--fc-s2);
+}
+
+.fc-chat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-s3);
+
+  padding: var(--fc-s3);
+  border-radius: var(--fc-r-md);
+
+  cursor: pointer;
+  transition: background 0.2s var(--fc-ease);
+}
+
+.fc-chat-item:hover {
+  background: var(--fc-canvas);
+}
+
+.fc-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  border-radius: 14px;
+  background: var(--fc-grad);
+  color: var(--fc-on-accent);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.fc-chat-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fc-chat-info strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fc-ink);
+}
+
+.fc-chat-info span {
+  font-size: 12px;
+  color: var(--fc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-chat-item small {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding-top: 3px;
+  color: var(--fc-muted);
+  font-size: 11px;
+}
+
+
+/* =====================================================
+   MESSAGES
+===================================================== */
+
+#fc-chatbox-messages {
+  flex: 1;
+  min-height: 0;
+  padding: var(--fc-s4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--fc-canvas);
+}
+
+#fc-active-group-title {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  color: var(--fc-muted);
+  background: var(--fc-surface);
+  border-bottom: 1px solid var(--fc-line-soft);
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.fc-message {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  margin-bottom: var(--fc-s2);
+  max-width: 80%;
+
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  animation: fc-msg-in 0.28s var(--fc-ease);
+}
+
+@keyframes fc-msg-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.fc-message-author {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.fc-message-text {
+  white-space: pre-wrap;
+}
+
+.fc-message-time {
+  align-self: flex-end;
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+.fc-message.user {
+  background: var(--fc-grad);
+  color: var(--fc-on-accent);
+  margin-left: auto;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 4px 12px var(--fc-accent-ring);
+}
+
+.fc-message.bot {
+  background: var(--fc-surface);
+  color: var(--fc-ink);
+  border: 1px solid var(--fc-line);
+  border-bottom-left-radius: 6px;
+  box-shadow: var(--fc-e1);
+}
+
+
+/* =====================================================
+   INPUT — floating pill
+===================================================== */
+
+#fc-chatbox-input-row {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fc-s2);
+
+  margin: var(--fc-s2) var(--fc-s3) var(--fc-s3);
+  padding: 5px 5px 5px var(--fc-s4);
+
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-pill);
+  box-shadow: var(--fc-e2);
+
+  transition: border-color 0.2s var(--fc-ease),
+              box-shadow 0.2s var(--fc-ease);
+}
+
+#fc-chatbox-input-row:focus-within {
+  border-color: var(--fc-accent);
+  box-shadow: 0 0 0 4px var(--fc-accent-ring);
+}
+
+#fc-chatbox-input {
+  flex: 1;
+  min-width: 0;
+
+  padding: 8px 0;
+  border: none;
+  border-radius: 0;
+
+  background: transparent;
+  color: var(--fc-ink);
+
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+#fc-chatbox-input::placeholder {
+  color: var(--fc-muted);
+}
+
+#fc-chatbox-send {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 18px;
+
+  background: var(--fc-grad);
+  color: var(--fc-on-accent);
+
+  border: none;
+  border-radius: var(--fc-r-pill);
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+  transition: transform 0.2s var(--fc-ease),
+              box-shadow 0.2s var(--fc-ease);
+}
+
+#fc-chatbox-send:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px var(--fc-accent-ring);
+}
+
+#fc-chatbox-send:active {
+  transform: scale(0.96);
+}
+
+
+/* =====================================================
+   MEDIA
+===================================================== */
+
+.fc-media-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: var(--fc-s2);
+
+  padding: var(--fc-s2) var(--fc-s4) var(--fc-s3);
+  background: var(--fc-surface);
+}
+
+.fc-upload-btn {
+  padding: 8px 14px;
+  border-radius: var(--fc-r-pill);
+
+  background: var(--fc-raised);
+  color: var(--fc-ink);
+
+  font-size: 12px;
+  font-weight: 550;
+
+  cursor: pointer;
+  transition: background 0.2s var(--fc-ease),
+              color 0.2s var(--fc-ease);
+}
+
+.fc-upload-btn:hover {
+  background: var(--fc-accent-tint);
+  color: var(--fc-accent);
+}
+
+#fc-media-list {
+  padding: var(--fc-s4);
+}
+
+.fc-empty {
+  min-height: 200px;
+  margin: var(--fc-s2);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fc-s1);
+
+  text-align: center;
+  color: var(--fc-muted);
+
+  border: 1.5px dashed var(--fc-line);
+  border-radius: var(--fc-r-md);
+}
+
+.fc-empty div {
+  margin-bottom: var(--fc-s1);
+  font-size: 30px;
+  opacity: 0.75;
+}
+
+.fc-empty strong {
+  color: var(--fc-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fc-empty span {
+  font-size: 12px;
+  max-width: 26ch;
+}
+
+.fc-preview-image {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: var(--fc-r-md);
+  background: var(--fc-raised);
+}
+
+.fc-file-name {
+  margin-top: var(--fc-s2);
+  font-size: 12px;
+  color: var(--fc-muted);
+}
+
+.fc-file-card {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-s3);
+
+  padding: var(--fc-s3);
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-md);
+
+  font-size: 18px;
+  box-shadow: var(--fc-e1);
+}
+
+.fc-file-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-file-card strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fc-ink);
+}
+
+.fc-file-card span {
+  font-size: 11px;
+  color: var(--fc-muted);
+}
+
+
+/* =====================================================
+   GROUPS
+===================================================== */
+
+#fc-group-list {
+  padding: var(--fc-s3);
+}
+
+.fc-group-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-s1);
+}
+
+.fc-groups-empty {
+  padding: var(--fc-s3);
+  color: var(--fc-muted);
+}
+
+.fc-group-item {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-s3);
+
+  padding: var(--fc-s3);
+  margin-bottom: var(--fc-s2);
+
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-md);
+
+  cursor: pointer;
+  box-shadow: var(--fc-e1);
+  transition: border-color 0.2s var(--fc-ease),
+              transform 0.2s var(--fc-ease),
+              box-shadow 0.2s var(--fc-ease);
+}
+
+.fc-group-item:hover {
+  border-color: var(--fc-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--fc-e2);
+}
+
+.fc-group-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  border-radius: 14px;
+  background: var(--fc-accent-tint);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.fc-group-item div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-group-item strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fc-ink);
+}
+
+.fc-group-item span {
+  font-size: 12px;
+  color: var(--fc-muted);
+}
+
+
+/* =====================================================
+   SHARES
+===================================================== */
+
+#fc-share-list {
+  padding: var(--fc-s3);
+}
+
+.fc-share-item {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-s3);
+
+  padding: var(--fc-s3);
+  margin-bottom: var(--fc-s2);
+
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-md);
+
+  box-shadow: var(--fc-e1);
+}
+
+.fc-share-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  border-radius: 14px;
+  background: var(--fc-accent-tint);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.fc-share-item div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-share-item strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fc-ink);
+}
+
+.fc-share-item span {
+  font-size: 12px;
+  color: var(--fc-muted);
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+
+/* =====================================================
+   MEDIA PHOTO GRID
+===================================================== */
+
+.fc-photo-grid {
+  padding: var(--fc-s3);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--fc-s3);
+}
+
+.fc-photo-card {
+  overflow: hidden;
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-md);
+
+  cursor: pointer;
+  box-shadow: var(--fc-e1);
+  transition: transform 0.25s var(--fc-ease),
+              box-shadow 0.25s var(--fc-ease);
+}
+
+.fc-photo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--fc-e2);
+}
+
+.fc-photo-card img {
+  display: block;
+  width: 100%;
+  height: 108px;
+  object-fit: cover;
+  background: var(--fc-raised);
+  transition: transform 0.35s var(--fc-ease);
+}
+
+.fc-photo-card:hover img {
+  transform: scale(1.04);
+}
+
+.fc-photo-info {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-photo-info strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fc-ink);
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-photo-info span {
+  font-size: 11px;
+  color: var(--fc-muted);
+}
+
+
+/* =====================================================
+   DRAG & DROP
+===================================================== */
+
+#fc-chatbox.fc-drag-over {
+  outline: 2px dashed var(--fc-accent);
+  outline-offset: -8px;
+}
+
+#fc-chatbox.fc-drag-over #fc-content {
+  background: var(--fc-accent-tint);
+}
+
+
+/* =====================================================
+   YOUTUBE VIDEO CARD
+===================================================== */
+
+.fc-youtube-message {
+  width: 100%;
+  margin: var(--fc-s3) 0;
+  animation: fcYoutubeIn 0.3s var(--fc-ease);
+}
+
+.fc-youtube-card {
+  width: 100%;
+  overflow: hidden;
+
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-md);
+
+  box-shadow: var(--fc-e1);
+  transition: box-shadow 0.25s var(--fc-ease),
+              transform 0.25s var(--fc-ease);
+}
+
+.fc-youtube-card:hover {
+  box-shadow: var(--fc-e2);
+  transform: translateY(-2px);
+}
+
+.fc-youtube-thumb-wrap {
+  position: relative;
+  width: 100%;
+  background: #0F172A;
+  overflow: hidden;
+}
+
+.fc-youtube-thumb {
+  display: block;
+  width: 100%;
+  height: 168px;
+  object-fit: cover;
+}
+
+.fc-youtube-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: var(--fc-r-pill);
+  background: rgba(220, 38, 38, 0.92);
+  color: #FFFFFF;
+  font-size: 20px;
+
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s var(--fc-ease),
+              background 0.25s var(--fc-ease);
+}
+
+.fc-youtube-card:hover .fc-youtube-play {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: #DC2626;
+}
+
+.fc-youtube-details {
+  padding: var(--fc-s3) var(--fc-s4) var(--fc-s4);
+  min-width: 0;
+}
+
+.fc-youtube-title {
+  margin: 0 0 var(--fc-s1);
+
+  color: var(--fc-ink);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fc-youtube-url {
+  display: block;
+  color: var(--fc-link);
+
+  font-size: 12px;
+  line-height: 1.45;
+  text-decoration: none;
+
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.fc-youtube-url:hover {
+  text-decoration: underline;
+}
+
+.fc-youtube-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fc-s1);
+
+  margin-bottom: var(--fc-s2);
+  padding: 4px 10px;
+
+  border-radius: var(--fc-r-pill);
+  background: rgba(220, 38, 38, 0.10);
+  color: #DC2626;
+
+  font-size: 11px;
+  font-weight: 650;
+}
+
+@keyframes fcYoutubeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* =====================================================
+   TOOLS
+===================================================== */
+
+.fc-tools-header {
+  margin-bottom: var(--fc-s4);
+}
+
+.fc-tools-header h2 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--fc-ink);
+}
+
+.fc-tools-header p {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--fc-muted);
+}
+
+.fc-tool-card {
+  display: flex;
+  gap: var(--fc-s3);
+
+  padding: var(--fc-s4);
+  margin-bottom: var(--fc-s3);
+
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-md);
+
+  box-shadow: var(--fc-e1);
+  transition: border-color 0.2s var(--fc-ease),
+              box-shadow 0.2s var(--fc-ease);
+}
+
+.fc-tool-card:focus-within {
+  border-color: var(--fc-accent);
+  box-shadow: 0 0 0 4px var(--fc-accent-ring);
+}
+
+.fc-tool-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--fc-accent-tint);
+  border-radius: 14px;
+  font-size: 19px;
+}
+
+.fc-tool-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fc-tool-info h3 {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--fc-ink);
+}
+
+.fc-tool-info p {
+  margin: 2px 0 var(--fc-s3);
+  font-size: 12px;
+  color: var(--fc-muted);
+}
+
+.fc-tool-info input,
+.fc-tool-info textarea {
+  width: 100%;
+
+  padding: 10px 12px;
+  border: 1px solid var(--fc-line);
+  border-radius: var(--fc-r-sm);
+
+  background: var(--fc-canvas);
+  color: var(--fc-ink);
+
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+
+  transition: border-color 0.2s var(--fc-ease),
+              box-shadow 0.2s var(--fc-ease),
+              background 0.2s var(--fc-ease);
+}
+
+.fc-tool-info input:focus,
+.fc-tool-info textarea:focus {
+  background: var(--fc-surface);
+  border-color: var(--fc-accent);
+  box-shadow: 0 0 0 3px var(--fc-accent-ring);
+}
+
+.fc-tool-info textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.fc-tool-info button {
+  margin-top: var(--fc-s2);
+
+  border: none;
+  border-radius: var(--fc-r-pill);
+  padding: 8px 16px;
+
+  background: var(--fc-accent);
+  color: var(--fc-on-accent);
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+  transition: background 0.2s var(--fc-ease),
+              transform 0.2s var(--fc-ease);
+}
+
+.fc-tool-info button:hover {
+  background: var(--fc-accent-hover);
+  transform: translateY(-1px);
+}
+
+#fc-calc-result {
+  margin-top: var(--fc-s2);
+  padding: 10px 12px;
+
+  background: var(--fc-raised);
+  border-radius: var(--fc-r-sm);
+
+  color: var(--fc-ink);
+  font-size: 14px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-note-actions,
+.fc-page-actions {
+  display: flex;
+  gap: var(--fc-s2);
+  flex-wrap: wrap;
+}
+
+.fc-page-info {
+  padding: var(--fc-s3);
+  background: var(--fc-raised);
+  border-radius: var(--fc-r-sm);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.fc-page-info strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--fc-muted);
+  font-weight: 600;
+}
+
+#fc-page-title {
+  margin-bottom: var(--fc-s2);
+  color: var(--fc-ink);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#fc-page-url {
+  color: var(--fc-link);
+  word-break: break-all;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 500px) {
+
+  #fc-chatbox {
+    right: 8px;
+    left: 8px;
+    bottom: 84px;
+
+    width: auto;
+    height: auto;
+    max-height: none;
+    top: 8px;
+
+    border-radius: 22px;
+  }
+
+  #fc-floating-btn {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .fc-youtube-thumb {
+    height: 150px;
+  }
+
+  .fc-message {
+    max-width: 88%;
+  }
+}
+
+@supports (height: 100dvh) {
+  @media (max-width: 500px) {
+    #fc-chatbox {
+      top: auto;
+      height: calc(100dvh - 100px);
+    }
+  }
+}
+
+
+/* =====================================================
+   MOTION PREFERENCES
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  #fc-floating-btn,
+  #fc-chatbox,
+  #fc-chatbox * {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #fc-floating-btn:hover,
+  #fc-floating-btn:active,
+  #fc-chatbox-close:hover {
+    transform: none;
+  }
+}
+
+#fc-chat-list {
+  display: none;
+}
